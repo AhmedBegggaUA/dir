@@ -180,8 +180,8 @@ class LightingFullBatchModelWrapper(pl.LightningModule):
         self.train_mask, self.val_mask, self.test_mask = train_mask, val_mask, test_mask
 
     def training_step(self, batch, batch_idx):
-        x, y, edge_index,x_line,line_edge_index = batch.x, batch.y.long(), batch.edge_index#,batch.line_data[0],batch.line_data[1]
-        out = self.model(x, edge_index,x_line,line_edge_index)
+        x, y, edge_index = batch.x, batch.y.long(), batch.edge_index#,batch.line_data[0],batch.line_data[1]
+        out = self.model(x, edge_index)
 
         loss = nn.functional.nll_loss(out[self.train_mask], y[self.train_mask].squeeze())
         self.log("train_loss", loss)
@@ -203,8 +203,8 @@ class LightingFullBatchModelWrapper(pl.LightningModule):
         return acc
 
     def test_step(self, batch, batch_idx):
-        x, y, edge_index,x_line,line_edge_index = batch.x, batch.y.long()#, batch.edge_index,batch.line_data[0],batch.line_data[1]
-        out = self.model(x, edge_index,x_line,line_edge_index)
+        x, y, edge_index = batch.x, batch.y.long()#, batch.edge_index,batch.line_data[0],batch.line_data[1]
+        out = self.model(x, edge_index)
 
         y_pred = out.max(1)[1]
         val_acc = self.evaluate(y_pred=y_pred[self.test_mask], y_true=y[self.test_mask])
