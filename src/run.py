@@ -32,18 +32,18 @@ def run(args):
         transpose=args.transpose,
     )
     data = dataset._data
-    train_masks, val_masks, test_masks = [], [], []
-    for num_run in range(args.num_runs):
-        train_mask, val_mask, test_mask = get_dataset_split(args.dataset, data, args.dataset_directory, num_run)
-        train_masks.append(train_mask.clone())
-        val_masks.append(val_mask.clone())
-        test_masks.append(test_mask.clone())
-    train_masks = torch.stack(train_masks)
-    val_masks = torch.stack(val_masks)
-    test_masks = torch.stack(test_masks)
-    print(train_masks.shape)
-    print(val_masks.shape)
-    print(test_masks.shape)
+    # train_masks, val_masks, test_masks = [], [], []
+    # for num_run in range(args.num_runs):
+    #     train_mask, val_mask, test_mask = get_dataset_split(args.dataset, data, args.dataset_directory, num_run)
+    #     train_masks.append(train_mask.clone())
+    #     val_masks.append(val_mask.clone())
+    #     test_masks.append(test_mask.clone())
+    # train_masks = torch.stack(train_masks)
+    # val_masks = torch.stack(val_masks)
+    # test_masks = torch.stack(test_masks)
+    # print(train_masks.shape)
+    # print(val_masks.shape)
+    # print(test_masks.shape)
 
     print('===========================================================================================================')
     print('=============================== Creating Line Graph =====================================================')
@@ -85,9 +85,9 @@ def run(args):
     # Inicializar las matrices para las características, etiquetas y máscaras
     line_features = torch.zeros((linegraph.number_of_nodes(), data.num_features), dtype=data.x.dtype)
     line_labels = torch.zeros((linegraph.number_of_nodes()), dtype=data.y.dtype)
-    line_train_masks = torch.zeros((args.num_runs, linegraph.number_of_nodes()), dtype=train_masks.dtype)
-    line_val_masks = torch.zeros((args.num_runs, linegraph.number_of_nodes()), dtype=train_masks.dtype)
-    line_test_masks = torch.zeros((args.num_runs, linegraph.number_of_nodes()), dtype=train_masks.dtype)
+    # line_train_masks = torch.zeros((args.num_runs, linegraph.number_of_nodes()), dtype=train_masks.dtype)
+    # line_val_masks = torch.zeros((args.num_runs, linegraph.number_of_nodes()), dtype=train_masks.dtype)
+    # line_test_masks = torch.zeros((args.num_runs, linegraph.number_of_nodes()), dtype=train_masks.dtype)
 
     # Asignar características y etiquetas para todos los nodos del line graph de manera vectorizada
     edge_indices = data.edge_index[1]
@@ -95,9 +95,9 @@ def run(args):
     line_labels = data.y[edge_indices]
 
     # Asignar máscaras de entrenamiento, validación y prueba de manera vectorizada
-    line_train_masks = train_masks[:, edge_indices]
-    line_val_masks = val_masks[:, edge_indices]
-    line_test_masks = test_masks[:, edge_indices]
+    # line_train_masks = train_masks[:, edge_indices]
+    # line_val_masks = val_masks[:, edge_indices]
+    # line_test_masks = test_masks[:, edge_indices]
     line_edge_index = line_edge_index.to(data.x.device)
     line_data = Data(x=line_features,edge_index=line_edge_index,y=line_labels)
     print('Line Data: ')
@@ -111,16 +111,17 @@ def run(args):
     print(dataset._data)
     print('===========================================================================================================')
     print('=============================== End Line Graph =====================================================')
-    train_masks = line_train_masks
-    val_masks = line_val_masks
-    test_masks = line_test_masks
+    # train_masks = line_train_masks
+    # val_masks = line_val_masks
+    # test_masks = line_test_masks
     data_loader = DataLoader(FullBatchGraphDataset(data), batch_size=1, collate_fn=lambda batch: batch[0])
     val_accs, test_accs = [], []
     for num_run in range(args.num_runs):
         # Get train/val/test splits for the current run
-        train_mask = train_masks[num_run]
-        val_mask = val_masks[num_run]
-        test_mask = test_masks[num_run]    
+        # train_mask = train_masks[num_run]
+        # val_mask = val_masks[num_run]
+        # test_mask = test_masks[num_run]    
+        train_mask, val_mask, test_mask = get_dataset_split(args.dataset, data, args.dataset_directory, num_run)
 
         # Get model
         args.num_features, args.num_classes = data.num_features, dataset.num_classes
