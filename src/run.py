@@ -48,11 +48,10 @@ def run(args):
     print('===========================================================================================================')
     print('=============================== Creating Line Graph =====================================================')
     print('===========================================================================================================')
-    original = to_networkx(data, to_undirected=False,to_multi=True)
+    original = to_networkx(data, to_undirected=False)#,to_multi=True)
     print('Original Graph: ')
     print(original)
     linegraph = nx.line_graph(original)
-    linegraph = nx.line_graph(linegraph)
     # We add the self loops in term
     print('Line Graph: ')
     print('======================')
