@@ -71,7 +71,8 @@ def get_dataset(name: str, root_dir: str, homophily=None, undirected=False, self
     if undirected:
         dataset._data.edge_index = torch_geometric.utils.to_undirected(dataset._data.edge_index)
     if self_loops:
-        dataset._data.edge_index, _ = torch_geometric.utils.add_self_loops(dataset._data.edge_index)
+        #dataset._data.edge_index, _ = torch_geometric.utils.add_self_loops(dataset._data.edge_index)
+        print("No añadas perro")
     if transpose:
         dataset._data.edge_index = torch.stack([dataset._data.edge_index[1], dataset._data.edge_index[0]])
     if line:
