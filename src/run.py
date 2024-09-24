@@ -91,6 +91,11 @@ def run(args):
     edge_indices_src = data.edge_index[0]
 
     line_features = torch.cat([data.x[edge_indices], data.x[edge_indices_src]], dim=1)
+    print('Line Features: ')
+    print('======================')
+    print(data.x.shape)
+    print(line_features.shape)
+    exit()
     line_labels = data.y[edge_indices]
 
     # Asignar máscaras de entrenamiento, validación y prueba de manera vectorizada
