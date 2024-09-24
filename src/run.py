@@ -95,7 +95,6 @@ def run(args):
     print('======================')
     print(data.x.shape)
     print(line_features.shape)
-    exit()
     line_labels = data.y[edge_indices]
 
     # Asignar máscaras de entrenamiento, validación y prueba de manera vectorizada
