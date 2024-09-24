@@ -184,7 +184,7 @@ class LightingFullBatchModelWrapper(pl.LightningModule):
         return acc
 
     def test_step(self, batch, batch_idx):
-        x, y, edge_index = batch.x, batch.y.long()#, batch.edge_index,batch.line_data[0],batch.line_data[1]
+        x, y, edge_index = batch.x, batch.y.long(), batch.edge_index#,batch.line_data[0],batch.line_data[1]
         out = self.model(x, edge_index)
 
         y_pred = out.max(1)[1]
