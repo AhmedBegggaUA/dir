@@ -76,40 +76,6 @@ def get_dataset(name: str, root_dir: str, homophily=None, undirected=False, self
         dataset._data.edge_index = torch.stack([dataset._data.edge_index[1], dataset._data.edge_index[0]])
     if line:
         print('===========================================================================================================')
-        print('=============================== Creating Line Graph =====================================================')
-        print('===========================================================================================================')
-        original = to_networkx(dataset._data, to_undirected=False,to_multi=True)
-        print('Original Graph: ')
-        print(original)
-
-        linegraph = nx.line_graph(original)
-        # We add the self loops in term
-        print('Line Graph: ')
-        print('======================')
-        print(f'Number of nodes: {linegraph.number_of_nodes()}')
-        print(f'Number of edges: {linegraph.number_of_edges()}')
-        print()
-        # Now we parse to  edge_index the line graph in numpy
-        line_edge_index  = from_networkx(linegraph).edge_index
-        # Now we have that the original edge index is [2, 38378] and the line nodes is 38328, we need to remove them
-        print('Original Edge Index: ')
-        print('======================')
-        print(dataset._data.edge_index.shape)
-        print('Edge Index: ')
-        print('======================')
-        print(line_edge_index.shape)
-        print()
-        # Ahora para cada nodo del line graph, se le asigna la característica del nodo destino en el grafo original y el nodo origen
-        line_features = torch.zeros((linegraph.number_of_nodes(),2*dataset._data.num_features),dtype=torch.float32)
-        for i in range(linegraph.number_of_nodes()):
-            line_features[i] = torch.cat([dataset._data.x[dataset._data.edge_index[0][i]],dataset._data.x[dataset._data.edge_index[1][i]]])
-            #line_features[i] =  data.x[data.edge_index[1][i]]
-        dataset._data.line_data = [line_features,line_edge_index]
-        print('Line Data: ')
-        print('======================')
-        print(dataset._data)
-        print('===========================================================================================================')
-
     return dataset, evaluator
 
 
