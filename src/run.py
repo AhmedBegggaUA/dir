@@ -83,11 +83,11 @@ def run(args):
     #         line_val_masks[num_run][i] = val_masks[num_run][data.edge_index[1][i]]
     #         line_test_masks[num_run][i] = test_masks[num_run][data.edge_index[1][i]]
     # Inicializar las matrices para las características, etiquetas y máscaras
-    line_features = torch.zeros((linegraph.number_of_nodes(), data.num_features), dtype=torch.float32)
-    line_labels = torch.zeros((linegraph.number_of_nodes()), dtype=torch.long)
-    line_train_masks = torch.zeros((args.num_runs, linegraph.number_of_nodes()), dtype=torch.bool)
-    line_val_masks = torch.zeros((args.num_runs, linegraph.number_of_nodes()), dtype=torch.bool)
-    line_test_masks = torch.zeros((args.num_runs, linegraph.number_of_nodes()), dtype=torch.bool)
+    line_features = torch.zeros((linegraph.number_of_nodes(), data.num_features), dtype=data.x.dtype)
+    line_labels = torch.zeros((linegraph.number_of_nodes()), dtype=data.y.dtype)
+    line_train_masks = torch.zeros((args.num_runs, linegraph.number_of_nodes()), dtype=train_masks.dtype)
+    line_val_masks = torch.zeros((args.num_runs, linegraph.number_of_nodes()), dtype=train_masks.dtype)
+    line_test_masks = torch.zeros((args.num_runs, linegraph.number_of_nodes()), dtype=train_masks.dtype)
 
     # Asignar características y etiquetas para todos los nodos del line graph de manera vectorizada
     edge_indices = data.edge_index[1]
