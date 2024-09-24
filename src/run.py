@@ -98,9 +98,8 @@ def run(args):
     line_train_masks = train_masks[:, edge_indices]
     line_val_masks = val_masks[:, edge_indices]
     line_test_masks = test_masks[:, edge_indices]
-
-    
-    line_data = Data(x=line_features,edge_index=[line_edge_index],y=line_labels)
+    line_edge_index = line_edge_index.to(data.x.device)
+    line_data = Data(x=line_features,edge_index=line_edge_index,y=line_labels)
     print('Line Data: ')
     print('======================')
     print(line_data)
