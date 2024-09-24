@@ -134,25 +134,12 @@ class GNN(torch.nn.Module):
         self.jumping_knowledge = jumping_knowledge
         self.normalize = normalize
         # AHMED 
-        self.line_conv1 = GCNConv(2*num_features , hidden_dim)
+        self.line_conv1 = GCNConv(num_features , hidden_dim)
         self.line_convs = torch.nn.ModuleList()
         for _ in range((num_layers) - 2):
             self.line_convs.append(GCNConv(hidden_dim, hidden_dim))
         self.line_conv2 = GCNConv(hidden_dim, hidden_dim)
-        self.combine = Linear(hidden_dim+num_features,hidden_dim)
-    def forward(self, x, edge_index,x_line,edge_index_line):
-        edge_attr = self.line_conv1(x_line, edge_index_line)
-        edge_attr = F.relu(edge_attr)
-        for conv in self.line_convs:
-            edge_attr = conv(edge_attr, edge_index_line)
-            edge_attr = F.relu(edge_attr)
-        edge_attr = self.line_conv2(edge_attr, edge_index_line)#.log_softmax(dim=-1)
-        enriched = torch.zeros((x.shape[0],edge_attr.shape[1]),dtype=torch.float32,device=x.device)
-        enriched.scatter_add_(0,edge_index[0].unsqueeze(1).repeat(1,edge_attr.shape[1]),edge_attr)
-        enriched.scatter_add_(0,edge_index[1].unsqueeze(1).repeat(1,edge_attr.shape[1]),edge_attr)
-        x = torch.cat([x,enriched],dim=1)
-        x = self.combine(x)
-
+    def forward(self, x, edge_index):
         xs = []
         for i, conv in enumerate(self.convs):
             x = conv(x, edge_index)
