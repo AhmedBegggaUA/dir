@@ -117,9 +117,9 @@ class GNN(torch.nn.Module):
         self.alpha = nn.Parameter(torch.ones(1) * alpha, requires_grad=learn_alpha)
         output_dim = hidden_dim if jumping_knowledge else num_classes
         if num_layers == 1:
-            self.convs = ModuleList([get_conv(conv_type, hidden_dim, output_dim, self.alpha)])
+            self.convs = ModuleList([get_conv(conv_type, num_features, output_dim, self.alpha)])
         else:
-            self.convs = ModuleList([get_conv(conv_type, hidden_dim, hidden_dim, self.alpha)])
+            self.convs = ModuleList([get_conv(conv_type, num_features, hidden_dim, self.alpha)])
             for _ in range(num_layers - 2):
                 self.convs.append(get_conv(conv_type, hidden_dim, hidden_dim, self.alpha))
             self.convs.append(get_conv(conv_type, hidden_dim, output_dim, self.alpha))
@@ -133,12 +133,6 @@ class GNN(torch.nn.Module):
         self.dropout = dropout
         self.jumping_knowledge = jumping_knowledge
         self.normalize = normalize
-        # AHMED 
-        self.line_conv1 = GCNConv(num_features , hidden_dim)
-        self.line_convs = torch.nn.ModuleList()
-        for _ in range((num_layers) - 2):
-            self.line_convs.append(GCNConv(hidden_dim, hidden_dim))
-        self.line_conv2 = GCNConv(hidden_dim, hidden_dim)
     def forward(self, x, edge_index):
         xs = []
         for i, conv in enumerate(self.convs):
