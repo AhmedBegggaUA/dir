@@ -52,6 +52,7 @@ def run(args):
     print('Original Graph: ')
     print(original)
     linegraph = nx.line_graph(original)
+    linegraph = nx.line_graph(linegraph)
     # We add the self loops in term
     print('Line Graph: ')
     print('======================')
@@ -88,13 +89,7 @@ def run(args):
 
     # Asignar características y etiquetas para todos los nodos del line graph de manera vectorizada
     edge_indices = data.edge_index[1]
-    edge_indices_src = data.edge_index[0]
-
-    line_features = torch.cat([data.x[edge_indices], data.x[edge_indices_src]], dim=1)
-    print('Line Features: ')
-    print('======================')
-    print(data.x.shape)
-    print(line_features.shape)
+    line_features = data.x[edge_indices]
     line_labels = data.y[edge_indices]
 
     # Asignar máscaras de entrenamiento, validación y prueba de manera vectorizada
