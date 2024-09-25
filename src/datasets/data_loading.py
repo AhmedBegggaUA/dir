@@ -171,7 +171,7 @@ def get_dataset(name: str, root_dir: str, homophily=None, undirected=False, self
         print('======================')
         print(new_edge_index.shape)
         print()
-        dataset._data.edge_index = new_edge_index
+        #dataset._data.edge_index = new_edge_index
 
     return dataset, evaluator
 
