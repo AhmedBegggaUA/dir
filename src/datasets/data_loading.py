@@ -81,7 +81,7 @@ def get_dataset(name: str, root_dir: str, homophily=None, undirected=False, self
 
 
 def get_dataset_split(name, data, root_dir, split_number):
-    if name in ["snap-patents", "chameleons", "squirrels", "telegram", "directed-roman-empire"]:
+    if name in ["snap-patents", "chameleon", "squirrel", "telegram", "directed-roman-empire"]:
         return (
             data["train_mask"][:, split_number],
             data["val_mask"][:, split_number],
@@ -110,9 +110,9 @@ def get_dataset_split(name, data, root_dir, split_number):
     elif name in ["syn-dir", "cora_ml", "citeseer_full"]:
         # Uniform 50/25/25 split
         return set_uniform_train_val_test_split(split_number, data, train_ratio=0.5, val_ratio=0.25)
-    elif name in["chameleon", "squirrel"]:
-        # Uniform 48/32/25 split
-        return set_uniform_train_val_test_split(split_number, data, train_ratio=0.48, val_ratio=0.32)
+    # elif name in["chameleon", "squirrel"]:
+    #     # Uniform 48/32/25 split
+    #     return set_uniform_train_val_test_split(split_number, data, train_ratio=0.48, val_ratio=0.32)
 
 def set_uniform_train_val_test_split(seed, data, train_ratio=0.5, val_ratio=0.25):
     rnd_state = np.random.RandomState(seed)
