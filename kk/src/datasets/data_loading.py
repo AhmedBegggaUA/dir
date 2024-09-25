@@ -85,13 +85,10 @@ def get_dataset(name: str, root_dir: str, homophily=None, undirected=False, self
         import numpy as np
         from scipy.spatial.distance import cosine
 
-        import networkx as nx
-        import numpy as np
-        from scipy.spatial.distance import cosine
-
         def linegraph_sparsification_directed(G, node_features, ratio=0.5, alpha=0.5, temperature=1.0):
             """
             Realiza la esparsificación de un grafo dirigido utilizando su linegraph y características de nodos.
+            Incluye manejo de valores NaN y cero.
             
             :param G: Grafo dirigido original (networkx.DiGraph)
             :param node_features: Diccionario de características de nodos {node_id: feature_vector}
@@ -119,7 +116,9 @@ def get_dataset(name: str, root_dir: str, homophily=None, undirected=False, self
             
             # Paso 3: Calcular similitud de coseno entre nodos conectados
             def cosine_similarity(features1, features2):
-                return 1 - cosine(features1, features2)  # 1 - distancia para obtener similitud
+                if np.allclose(features1, features2):
+                    return 1.0
+                return max(0, 1 - cosine(features1, features2))  # Asegurar que no sea negativo
             
             edge_similarities = {}
             for u, v in G.edges():
@@ -127,19 +126,31 @@ def get_dataset(name: str, root_dir: str, homophily=None, undirected=False, self
                 edge_similarities[(u, v)] = sim
             
             # Normalizar similitudes
-            max_sim = max(edge_similarities.values())
-            min_sim = min(edge_similarities.values())
-            for edge in edge_similarities:
-                edge_similarities[edge] = (edge_similarities[edge] - min_sim) / (max_sim - min_sim)
+            similarities = list(edge_similarities.values())
+            max_sim = max(similarities)
+            min_sim = min(similarities)
+            if max_sim != min_sim:
+                for edge in edge_similarities:
+                    edge_similarities[edge] = (edge_similarities[edge] - min_sim) / (max_sim - min_sim)
+            else:
+                for edge in edge_similarities:
+                    edge_similarities[edge] = 1.0  # Si todas las similitudes son iguales, establecerlas en 1
             
             # Paso 4: Combinar probabilidades y similitudes
             prob_final = alpha * prob_topological + (1 - alpha) * np.array([edge_similarities[edge] for edge in G.edges()])
+            
+            # Manejar posibles NaN o infinitos
+            prob_final = np.nan_to_num(prob_final, nan=0.0, posinf=1.0, neginf=0.0)
+            
+            # Asegurarse de que las probabilidades no sean todas cero
+            if np.all(prob_final == 0):
+                prob_final = np.ones_like(prob_final)
             
             # Normalizar probabilidades finales
             prob_final /= prob_final.sum()
             
             # Paso 5: Aplicar temperatura y seleccionar aristas
-            prob_final = np.exp(np.log(prob_final) / temperature)
+            prob_final = np.exp(np.log(prob_final + 1e-10) / temperature)  # Añadir pequeño valor para evitar log(0)
             prob_final /= prob_final.sum()
             
             num_edges_to_keep = int(ratio * G.number_of_edges())
