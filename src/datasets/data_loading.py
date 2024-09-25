@@ -137,8 +137,8 @@ def get_dataset(name: str, root_dir: str, homophily=None, undirected=False, self
                     edge_similarities[edge] = 1.0  # Si todas las similitudes son iguales, establecerlas en 1
             
             # Paso 4: Combinar probabilidades y similitudes
-            prob_final = alpha * prob_topological + (1 - alpha) * np.array([edge_similarities[edge] for edge in G.edges()])
-            
+            #prob_final = alpha * prob_topological + (1 - alpha) * np.array([edge_similarities[edge] for edge in G.edges()])
+            prob_final = prob_topological * np.array([edge_similarities[edge] for edge in G.edges()])
             # Manejar posibles NaN o infinitos
             prob_final = np.nan_to_num(prob_final, nan=0.0, posinf=1.0, neginf=0.0)
             
