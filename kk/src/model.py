@@ -134,7 +134,7 @@ class GNN(torch.nn.Module):
         self.jumping_knowledge = jumping_knowledge
         self.normalize = normalize
         # AHMED 
-        self.line_conv1 = GCNConv(2*num_features , hidden_dim)
+        self.line_conv1 = GCNConv(num_features , hidden_dim)
         self.line_convs = torch.nn.ModuleList()
         for _ in range((num_layers) - 2):
             self.line_convs.append(GCNConv(hidden_dim, hidden_dim))
