@@ -164,7 +164,7 @@ def get_dataset(name: str, root_dir: str, homophily=None, undirected=False, self
                     G_sparse.add_edge(u, v)
             
             return G_sparse
-        G_sparse = linegraph_sparsification_directed(original, dataset._data.x.numpy(), ratio=0.8, alpha=0.8, temperature=1.0)
+        G_sparse = linegraph_sparsification_directed(original, dataset._data.x.numpy(), ratio=0.75, alpha=0.5, temperature=1.0)
         new_edge_index = from_networkx(G_sparse).edge_index
         print('Edge Index: ')
         print('======================')
