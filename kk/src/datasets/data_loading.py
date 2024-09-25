@@ -78,7 +78,7 @@ def get_dataset(name: str, root_dir: str, homophily=None, undirected=False, self
         print('===========================================================================================================')
         print('=============================== Creating Line Graph =====================================================')
         print('===========================================================================================================')
-        original = to_networkx(dataset._data, to_undirected=False,to_multi=False)
+        original = to_networkx(dataset._data, to_undirected=False,to_multi=True)
         print('Original Graph: ')
         print(original)
 
@@ -90,18 +90,26 @@ def get_dataset(name: str, root_dir: str, homophily=None, undirected=False, self
         print(f'Number of edges: {linegraph.number_of_edges()}')
         print()
         # Now we parse to  edge_index the line graph in numpy
-        def sparsify_sample_incremental_degree(g, size=4):
-            edges = list(g.G.edges)
-            num_nodes = len(g.G.nodes)
+        def sample_edges_degree(G, ratio=0.5, hubs=None, authorities=None):
+            edges = list(G.edges)
+            num_nodes = len(G.nodes)
             num_edges = len(edges)
-            in_degree = dict(g.G.in_degree())
-            out_degree = dict(g.G.out_degree())
-            prob = [(0.5 / num_nodes) * (1.0 / out_degree[edge[0]] + 1.0 / in_degree[edge[1]]) for edge in edges]
+            size = int(ratio * num_edges)
+            in_degree = dict(G.in_degree())
+            out_degree = dict(G.out_degree())
+
+            if hubs is None or authorities is None:
+                # prob = [(0.5 / num_nodes) * (1.0 / out_degree[edge[0]]) + (1.0 / in_degree[edge[1]]) for edge in edges]
+                prob = [(0.5 / num_nodes) * (1.0 / (in_degree[edge[0]] + 1)) + (1.0 / (out_degree[edge[1]] + 1)) for edge in
+                        edges]
+            else:
+                # prob = [(0.5 / num_nodes) * (1.0 / hubs[edge[0]]) + (1.0 / authorities[edge[1]]) for edge in edges]
+                prob = [(0.5 / num_nodes) * (1.0 / (authorities[edge[0]] + 1)) + (1.0 / (hubs[edge[1]] + 1)) for edge in edges]
             prob = np.array(prob)
             return prob
         print('Sparsify Sample Incremental Degree: ')
         print('======================')
-        prob = sparsify_sample_incremental_degree(linegraph)
+        prob = sample_edges_degree(linegraph)
         print(prob.shape)
         exit()
         line_edge_index  = from_networkx(linegraph).edge_index
