@@ -4,6 +4,7 @@ import pytorch_lightning as pl
 from torch_sparse import SparseTensor
 import torch.nn.functional as F
 from torch.nn import ModuleList, Linear
+from torch_scatter import scatter
 from torch_geometric.nn import (
     SAGEConv,
     GCNConv,
@@ -147,11 +148,9 @@ class GNN(torch.nn.Module):
             edge_attr = conv(edge_attr, edge_index_line)
             edge_attr = F.relu(edge_attr)
         edge_attr = self.line_conv2(edge_attr, edge_index_line)#.log_softmax(dim=-1)
-        enriched = torch.zeros((x.shape[0],edge_attr.shape[1]),dtype=torch.float32,device=x.device)
-        edge_index_dst = edge_index[1]
-        print(edge_index_dst.shape)
-        exit()
-        enriched = edge_attr[edge_index_dst]
+        # Usamos `scatter` para agregar embeddings de las aristas en los nodos destino
+        enriched = scatter(edge_attr, edge_index[1], dim=0, out=enriched, reduce='mean')
+
         x = torch.cat([x,enriched],dim=1)
         x = self.combine(x)
 
