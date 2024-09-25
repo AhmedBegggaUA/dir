@@ -149,7 +149,7 @@ def get_dataset(name: str, root_dir: str, homophily=None, undirected=False, self
             # Normalizar probabilidades finales
             prob_final /= prob_final.sum()
             # Damos la vuelta a las probabilidades para que sea más probable que se mantengan las aristas más importantes
-            prob_final = 1 - prob_final
+            prob_final  = 1 - prob_final
             # Paso 5: Aplicar temperatura y seleccionar aristas
             prob_final = np.exp(np.log(prob_final + 1e-10) / temperature)  # Añadir pequeño valor para evitar log(0)
             prob_final /= prob_final.sum()
