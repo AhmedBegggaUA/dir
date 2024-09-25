@@ -148,6 +148,8 @@ class GNN(torch.nn.Module):
             edge_attr = conv(edge_attr, edge_index_line)
             edge_attr = F.relu(edge_attr)
         edge_attr = self.line_conv2(edge_attr, edge_index_line)#.log_softmax(dim=-1)
+         # Inicializamos un tensor para almacenar los embeddings agregados en los nodos
+        enriched = torch.zeros((x.shape[0], edge_attr.shape[1]), dtype=torch.float32, device=x.device)
         # Usamos `scatter` para agregar embeddings de las aristas en los nodos destino
         enriched = scatter(edge_attr, edge_index[1], dim=0, out=enriched, reduce='mean')
 
