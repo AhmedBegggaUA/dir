@@ -92,7 +92,7 @@ def run(args):
     # Asignar características y etiquetas para todos los nodos del line graph de manera vectorizada
     edge_indices_dst = data.edge_index[1]
     ede_indices_src = data.edge_index[0]
-    line_features = torch.cat([data.x[ede_indices_src], data.x[edge_indices_dst]], dim=1)
+    line_features = data.x[edge_indices_dst] #torch.cat([data.x[ede_indices_src], data.x[edge_indices_dst]], dim=1)
     line_labels = data.y[edge_indices_dst]
 
     # Asignar máscaras de entrenamiento, validación y prueba de manera vectorizada
