@@ -85,16 +85,20 @@ def get_dataset(name: str, root_dir: str, homophily=None, undirected=False, self
         import numpy as np
         from scipy.spatial.distance import cosine
 
-        def linegraph_sparsification(G, node_features, ratio=0.5, alpha=0.5, temperature=1.0):
+        import networkx as nx
+        import numpy as np
+        from scipy.spatial.distance import cosine
+
+        def linegraph_sparsification_directed(G, node_features, ratio=0.5, alpha=0.5, temperature=1.0):
             """
-            Realiza la esparsificación de un grafo utilizando su linegraph y características de nodos.
+            Realiza la esparsificación de un grafo dirigido utilizando su linegraph y características de nodos.
             
-            :param G: Grafo original (networkx.Graph)
+            :param G: Grafo dirigido original (networkx.DiGraph)
             :param node_features: Diccionario de características de nodos {node_id: feature_vector}
             :param ratio: Proporción de aristas a mantener
             :param alpha: Peso para combinar probabilidad topológica y similitud de características
             :param temperature: Controla la aleatoriedad en la selección final
-            :return: Grafo esparsificado
+            :return: Grafo dirigido esparsificado
             """
             
             # Paso 1: Crear el linegraph
@@ -107,8 +111,8 @@ def get_dataset(name: str, root_dir: str, homophily=None, undirected=False, self
                 in_degree = dict(G.in_degree())
                 out_degree = dict(G.out_degree())
                 
-                prob = [(0.5 / num_nodes) * (1.0 / (in_degree[edge[0]] + 1)) + 
-                        (1.0 / (out_degree[edge[1]] + 1)) for edge in edges]
+                prob = [(0.5 / num_nodes) * (1.0 / (out_degree[edge[0]] + 1)) + 
+                        (1.0 / (in_degree[edge[1]] + 1)) for edge in edges]
                 return np.array(prob)
             
             prob_topological = sample_edges_degree(G)
@@ -121,7 +125,6 @@ def get_dataset(name: str, root_dir: str, homophily=None, undirected=False, self
             for u, v in G.edges():
                 sim = cosine_similarity(node_features[u], node_features[v])
                 edge_similarities[(u, v)] = sim
-                edge_similarities[(v, u)] = sim  # Para grafos no dirigidos
             
             # Normalizar similitudes
             max_sim = max(edge_similarities.values())
@@ -130,7 +133,7 @@ def get_dataset(name: str, root_dir: str, homophily=None, undirected=False, self
                 edge_similarities[edge] = (edge_similarities[edge] - min_sim) / (max_sim - min_sim)
             
             # Paso 4: Combinar probabilidades y similitudes
-            prob_final = alpha * prob_topological + (1 - alpha) * np.array([edge_similarities[tuple(edge)] for edge in G.edges()])
+            prob_final = alpha * prob_topological + (1 - alpha) * np.array([edge_similarities[edge] for edge in G.edges()])
             
             # Normalizar probabilidades finales
             prob_final /= prob_final.sum()
@@ -143,14 +146,14 @@ def get_dataset(name: str, root_dir: str, homophily=None, undirected=False, self
             selected_edges = np.random.choice(G.number_of_edges(), size=num_edges_to_keep, replace=False, p=prob_final)
             
             # Paso 6: Crear el grafo esparsificado
-            G_sparse = nx.Graph()
+            G_sparse = nx.DiGraph()
             G_sparse.add_nodes_from(G.nodes(data=True))
             for i, (u, v) in enumerate(G.edges()):
                 if i in selected_edges:
                     G_sparse.add_edge(u, v)
             
             return G_sparse
-        G_sparse = linegraph_sparsification(original, dataset._data.x.numpy(), ratio=0.5, alpha=0.5, temperature=1.0)
+        G_sparse = linegraph_sparsification_directed(original, dataset._data.x.numpy(), ratio=0.5, alpha=0.5, temperature=1.0)
         new_edge_index = from_networkx(G_sparse).edge_index
         print('Edge Index: ')
         print('======================')
