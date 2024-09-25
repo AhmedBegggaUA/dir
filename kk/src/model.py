@@ -154,7 +154,7 @@ class GNN(torch.nn.Module):
         enriched = scatter(edge_attr, edge_index[1], dim=0, out=enriched, reduce='mean')
 
         x = torch.cat([x,enriched],dim=1)
-        x = self.combine(x)
+        #x = self.combine(x)
 
         xs = []
         for i, conv in enumerate(self.convs):
