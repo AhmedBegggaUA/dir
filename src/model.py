@@ -133,6 +133,7 @@ class GNN(torch.nn.Module):
         self.dropout = dropout
         self.jumping_knowledge = jumping_knowledge
         self.normalize = normalize
+
     def forward(self, x, edge_index):
         xs = []
         for i, conv in enumerate(self.convs):
@@ -161,7 +162,7 @@ class LightingFullBatchModelWrapper(pl.LightningModule):
         self.train_mask, self.val_mask, self.test_mask = train_mask, val_mask, test_mask
 
     def training_step(self, batch, batch_idx):
-        x, y, edge_index = batch.x, batch.y.long(), batch.edge_index#,batch.line_data[0],batch.line_data[1]
+        x, y, edge_index = batch.x, batch.y.long(), batch.edge_index
         out = self.model(x, edge_index)
 
         loss = nn.functional.nll_loss(out[self.train_mask], y[self.train_mask].squeeze())
@@ -184,7 +185,7 @@ class LightingFullBatchModelWrapper(pl.LightningModule):
         return acc
 
     def test_step(self, batch, batch_idx):
-        x, y, edge_index = batch.x, batch.y.long(), batch.edge_index#,batch.line_data[0],batch.line_data[1]
+        x, y, edge_index = batch.x, batch.y.long(), batch.edge_index
         out = self.model(x, edge_index)
 
         y_pred = out.max(1)[1]
