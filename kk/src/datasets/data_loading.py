@@ -2,7 +2,7 @@ import os
 import numpy as np
 import math
 import pickle
-
+import torch.nn.functional as F
 import torch
 import torch_geometric
 from torch_geometric.data import download_url
@@ -110,7 +110,18 @@ def get_dataset(name: str, root_dir: str, homophily=None, undirected=False, self
         print('Sparsify Sample Incremental Degree: ')
         print('======================')
         prob = sample_edges_degree(linegraph)
+        # Pasamos prob a tensor
+        prob = torch.tensor(prob)
+        # Sacamos la cosine similarity de las features
+        def update_adjacency_matrix(features,edge_index):
+            norm_features = F.normalize(features, p=2, dim=1)
+            similarity_matrix = torch.mm(norm_features, norm_features.t())
+            # maskeamos con las coordenadas de edge_index
+            similarity_matrix = similarity_matrix[edge_index[0], edge_index[1]]
+            return similarity_matrix.flatten()
         print(prob.shape)
+        prob_features = update_adjacency_matrix(dataset._data.x,dataset._data.edge_index)
+        print(prob_features.shape)
         exit()
         line_edge_index  = from_networkx(linegraph).edge_index
 
