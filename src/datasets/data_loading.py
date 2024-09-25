@@ -2,7 +2,7 @@ import os
 import numpy as np
 import math
 import pickle
-
+import torch.nn.functional as F
 import torch
 import torch_geometric
 from torch_geometric.data import download_url
@@ -72,11 +72,106 @@ def get_dataset(name: str, root_dir: str, homophily=None, undirected=False, self
         dataset._data.edge_index = torch_geometric.utils.to_undirected(dataset._data.edge_index)
     if self_loops:
         dataset._data.edge_index, _ = torch_geometric.utils.add_self_loops(dataset._data.edge_index)
-        print("No añadas perro")
     if transpose:
         dataset._data.edge_index = torch.stack([dataset._data.edge_index[1], dataset._data.edge_index[0]])
     if line:
         print('===========================================================================================================')
+        print('=============================== Creating Line Graph =====================================================')
+        print('===========================================================================================================')
+        original = to_networkx(dataset._data, to_undirected=False,to_multi=True)
+        print('Original Graph: ')
+        print(original)
+        import networkx as nx
+        import numpy as np
+        from scipy.spatial.distance import cosine
+
+        def linegraph_sparsification_directed(G, node_features, ratio=0.5, alpha=0.5, temperature=1.0):
+            """
+            Realiza la esparsificación de un grafo dirigido utilizando su linegraph y características de nodos.
+            Incluye manejo de valores NaN y cero.
+            
+            :param G: Grafo dirigido original (networkx.DiGraph)
+            :param node_features: Diccionario de características de nodos {node_id: feature_vector}
+            :param ratio: Proporción de aristas a mantener
+            :param alpha: Peso para combinar probabilidad topológica y similitud de características
+            :param temperature: Controla la aleatoriedad en la selección final
+            :return: Grafo dirigido esparsificado
+            """
+            
+            # Paso 1: Crear el linegraph
+            L = nx.line_graph(G)
+            
+            # Paso 2: Calcular probabilidades basadas en grado
+            def sample_edges_degree(G):
+                edges = list(G.edges)
+                num_nodes = len(G.nodes)
+                in_degree = dict(G.in_degree())
+                out_degree = dict(G.out_degree())
+                
+                prob = [(0.5 / num_nodes) * (1.0 / (out_degree[edge[0]] + 1)) + 
+                        (1.0 / (in_degree[edge[1]] + 1)) for edge in edges]
+                return np.array(prob)
+            
+            prob_topological = sample_edges_degree(G)
+            
+            # Paso 3: Calcular similitud de coseno entre nodos conectados
+            def cosine_similarity(features1, features2):
+                if np.allclose(features1, features2):
+                    return 1.0
+                return max(0, 1 - cosine(features1, features2))  # Asegurar que no sea negativo
+            
+            edge_similarities = {}
+            for u, v in G.edges():
+                sim = cosine_similarity(node_features[u], node_features[v])
+                edge_similarities[(u, v)] = sim
+            
+            # Normalizar similitudes
+            similarities = list(edge_similarities.values())
+            max_sim = max(similarities)
+            min_sim = min(similarities)
+            if max_sim != min_sim:
+                for edge in edge_similarities:
+                    edge_similarities[edge] = (edge_similarities[edge] - min_sim) / (max_sim - min_sim)
+            else:
+                for edge in edge_similarities:
+                    edge_similarities[edge] = 1.0  # Si todas las similitudes son iguales, establecerlas en 1
+            
+            # Paso 4: Combinar probabilidades y similitudes
+            prob_final = alpha * prob_topological + (1 - alpha) * np.array([edge_similarities[edge] for edge in G.edges()])
+            
+            # Manejar posibles NaN o infinitos
+            prob_final = np.nan_to_num(prob_final, nan=0.0, posinf=1.0, neginf=0.0)
+            
+            # Asegurarse de que las probabilidades no sean todas cero
+            if np.all(prob_final == 0):
+                prob_final = np.ones_like(prob_final)
+            
+            # Normalizar probabilidades finales
+            prob_final /= prob_final.sum()
+            
+            # Paso 5: Aplicar temperatura y seleccionar aristas
+            prob_final = np.exp(np.log(prob_final + 1e-10) / temperature)  # Añadir pequeño valor para evitar log(0)
+            prob_final /= prob_final.sum()
+            
+            num_edges_to_keep = int(ratio * G.number_of_edges())
+            selected_edges = np.random.choice(G.number_of_edges(), size=num_edges_to_keep, replace=False, p=prob_final)
+            
+            # Paso 6: Crear el grafo esparsificado
+            G_sparse = nx.DiGraph()
+            G_sparse.add_nodes_from(G.nodes(data=True))
+            for i, (u, v) in enumerate(G.edges()):
+                if i in selected_edges:
+                    G_sparse.add_edge(u, v)
+            
+            return G_sparse
+        G_sparse = linegraph_sparsification_directed(original, dataset._data.x.numpy(), ratio=0.5, alpha=0.5, temperature=1.0)
+        new_edge_index = from_networkx(G_sparse).edge_index
+        print('Edge Index: ')
+        print('======================')
+        print(new_edge_index.shape)
+        print()
+        dataset._data.edge_index = new_edge_index
+
     return dataset, evaluator
 
 
@@ -110,9 +205,7 @@ def get_dataset_split(name, data, root_dir, split_number):
     elif name in ["syn-dir", "cora_ml", "citeseer_full"]:
         # Uniform 50/25/25 split
         return set_uniform_train_val_test_split(split_number, data, train_ratio=0.5, val_ratio=0.25)
-    # elif name in["chameleon", "squirrel"]:
-    #     # Uniform 48/32/25 split
-    #     return set_uniform_train_val_test_split(split_number, data, train_ratio=0.48, val_ratio=0.32)
+
 
 def set_uniform_train_val_test_split(seed, data, train_ratio=0.5, val_ratio=0.25):
     rnd_state = np.random.RandomState(seed)
