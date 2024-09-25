@@ -149,6 +149,8 @@ class GNN(torch.nn.Module):
         edge_attr = self.line_conv2(edge_attr, edge_index_line)#.log_softmax(dim=-1)
         enriched = torch.zeros((x.shape[0],edge_attr.shape[1]),dtype=torch.float32,device=x.device)
         edge_index_dst = edge_index[1]
+        print(edge_index_dst.shape)
+        exit()
         enriched = edge_attr[edge_index_dst]
         x = torch.cat([x,enriched],dim=1)
         x = self.combine(x)
