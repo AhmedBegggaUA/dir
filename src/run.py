@@ -61,8 +61,8 @@ def run(args):
     # Now we parse to  edge_index the line graph in numpy
     line_edge_index  = from_networkx(linegraph).edge_index
     # we add the self loops
-    # from torch_geometric.utils import add_self_loops
-    # line_edge_index,_ = add_self_loops(line_edge_index)
+    from torch_geometric.utils import add_self_loops
+    line_edge_index,_ = add_self_loops(line_edge_index)
     # Now we have that the original edge index is [2, 38378] and the line nodes is 38328, we need to remove them
     print('Original Edge Index: ')
     print('======================')
