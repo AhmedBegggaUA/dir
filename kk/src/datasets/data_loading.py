@@ -90,28 +90,21 @@ def get_dataset(name: str, root_dir: str, homophily=None, undirected=False, self
         print(f'Number of edges: {linegraph.number_of_edges()}')
         print()
         # Now we parse to  edge_index the line graph in numpy
+        def sparsify_sample_incremental_degree(g, size=4):
+            edges = list(g.G.edges)
+            num_nodes = len(g.G.nodes)
+            num_edges = len(edges)
+            in_degree = dict(g.G.in_degree())
+            out_degree = dict(g.G.out_degree())
+            prob = [(0.5 / num_nodes) * (1.0 / out_degree[edge[0]] + 1.0 / in_degree[edge[1]]) for edge in edges]
+            prob = np.array(prob)
+            return prob
+        print('Sparsify Sample Incremental Degree: ')
+        print('======================')
+        prob = sparsify_sample_incremental_degree(linegraph)
+        print(prob.shape)
+        exit()
         line_edge_index  = from_networkx(linegraph).edge_index
-        # Now we have that the original edge index is [2, 38378] and the line nodes is 38328, we need to remove them
-        print('Original Edge Index: ')
-        print('======================')
-        print(dataset._data.edge_index.shape)
-        print('Edge Index: ')
-        print('======================')
-        print(line_edge_index.shape)
-        print()
-        # Ahora para cada nodo del line graph, se le asigna la característica del nodo destino en el grafo original y el nodo origen
-        # line_features = torch.zeros((linegraph.number_of_nodes(),2*dataset._data.num_features),dtype=torch.float32)
-        # for i in range(linegraph.number_of_nodes()):
-        #     line_features[i] = torch.cat([dataset._data.x[dataset._data.edge_index[0][i]],dataset._data.x[dataset._data.edge_index[1][i]]])
-        #     #line_features[i] =  data.x[data.edge_index[1][i]]
-        line_features = torch.zeros((linegraph.number_of_nodes(), dataset.num_features), dtype=dataset._data.x.dtype)
-        edge_index_dst = dataset._data.edge_index[1]
-        line_features = dataset._data.x[edge_index_dst]
-        dataset._data.line_data = [line_features,line_edge_index]
-        print('Line Data: ')
-        print('======================')
-        print(dataset._data)
-        print('===========================================================================================================')
 
     return dataset, evaluator
 
