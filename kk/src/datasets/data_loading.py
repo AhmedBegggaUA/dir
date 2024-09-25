@@ -78,7 +78,7 @@ def get_dataset(name: str, root_dir: str, homophily=None, undirected=False, self
         print('===========================================================================================================')
         print('=============================== Creating Line Graph =====================================================')
         print('===========================================================================================================')
-        original = to_networkx(dataset._data, to_undirected=False,to_multi=True)
+        original = to_networkx(dataset._data, to_undirected=False,to_multi=False)
         print('Original Graph: ')
         print(original)
 
