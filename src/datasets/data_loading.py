@@ -16,6 +16,7 @@ from ogb.nodeproppred import PygNodePropPredDataset, Evaluator
 from src.datasets.directed_heterophilous_graphs import DirectedHeterophilousGraphDataset
 from src.datasets.telegram import Telegram
 from src.datasets.data_utils import get_mask
+from src.homophily import get_node_homophily
 from src.utils.third_party import (
     load_snap_patents_mat,
     even_quantile_labels,
@@ -78,9 +79,77 @@ def get_dataset(name: str, root_dir: str, homophily=None, undirected=False, self
         print('===========================================================================================================')
         print('=============================== Creating Line Graph =====================================================')
         print('===========================================================================================================')
-        original = to_networkx(dataset._data, to_undirected=False,to_multi=True)
+        original = to_networkx(dataset._data, to_undirected=False,to_multi=False)
         print('Original Graph: ')
         print(original)
+        # import networkx as nx
+        # import numpy as np
+        # from sklearn.metrics.pairwise import cosine_similarity
+
+        # def surgical_linegraph_edge_replacement(G, node_features, replacement_ratio=0.1):
+        #     """
+        #     Reemplaza quirúrgicamente un ratio de aristas del grafo original con nuevas aristas
+        #     sugeridas por el linegraph y las características de los nodos.
+            
+        #     :param G: Grafo dirigido original (networkx.DiGraph)
+        #     :param node_features: Diccionario de características de nodos {node_id: feature_vector}
+        #     :param replacement_ratio: Proporción de aristas a reemplazar
+        #     :return: Grafo dirigido modificado
+        #     """
+            
+        #     # Paso 1: Crear el linegraph
+        #     L = nx.line_graph(G)
+            
+        #     # Paso 2: Calcular similitudes de características para todas las aristas potenciales en el linegraph
+        #     edge_similarities = {}
+        #     for edge in L.edges():
+        #         # Aquí 'edge' representa una conexión entre dos aristas del grafo original
+        #         (u1, v1), (u2, v2) = edge
+        #         if v1 == u2:  # Aseguramos que las aristas están conectadas en el grafo original
+        #             sim = cosine_similarity([node_features[u1]], [node_features[v2]])[0][0]
+        #             edge_similarities[edge] = sim
+                    
+        #     # Paso 3: Identificar aristas potenciales basadas en el linegraph
+        #     potential_edges = set((u1, v2) for ((u1, v1), (u2, v2)) in edge_similarities.keys())
+        #     new_edges = potential_edges - set(G.edges())
+            
+        #     # Paso 4: Calcular la "fuerza" de las aristas existentes
+        #     existing_edge_strength = {}
+        #     for u, v in G.edges():
+        #         neighborhood_sim = np.mean([
+        #             edge_similarities.get(((u, v), (v, w)), 0)
+        #             for w in G.successors(v)
+        #         ])
+        #         existing_edge_strength[(u, v)] = neighborhood_sim
+            
+        #     # Paso 5: Ordenar las aristas existentes por fuerza (ascendente) y las nuevas por similitud (descendente)
+        #     existing_edges_sorted = sorted(existing_edge_strength.items(), key=lambda x: x[1])
+        #     new_edges_sorted = sorted(
+        #                     [
+        #                         (u, v, max(
+        #                             [edge_similarities.get(((w, u), (u, v)), 0) for w in G.predecessors(u)] or [-float('inf')]
+        #                         ))
+        #                         for u, v in new_edges
+        #                     ],
+        #                     key=lambda x: x[2],
+        #                     reverse=True
+        #                 )
+
+            
+        #     # Paso 6: Determinar el número de aristas a reemplazar
+        #     num_edges_to_replace = int(replacement_ratio * G.number_of_edges())
+            
+        #     # Paso 7: Realizar el reemplazo quirúrgico
+        #     edges_to_remove = [edge for edge, _ in existing_edges_sorted[:num_edges_to_replace]]
+        #     edges_to_add = [edge[:2] for edge in new_edges_sorted[:num_edges_to_replace]]
+            
+        #     # Paso 8: Crear el grafo modificado
+        #     G_modified = G.copy()
+        #     G_modified.remove_edges_from(edges_to_remove)
+        #     G_modified.add_edges_from(edges_to_add)
+            
+        #     return G_modified
+
         import networkx as nx
         import numpy as np
         from scipy.spatial.distance import cosine
@@ -141,7 +210,7 @@ def get_dataset(name: str, root_dir: str, homophily=None, undirected=False, self
             prob_final = prob_topological * np.array([edge_similarities[edge] for edge in G.edges()])
             # Manejar posibles NaN o infinitos
             prob_final = np.nan_to_num(prob_final, nan=0.0, posinf=1.0, neginf=0.0)
-            
+            prob_final = 1 - prob_final
             # Asegurarse de que las probabilidades no sean todas cero
             if np.all(prob_final == 0):
                 prob_final = np.ones_like(prob_final)
@@ -165,14 +234,33 @@ def get_dataset(name: str, root_dir: str, homophily=None, undirected=False, self
                     G_sparse.add_edge(u, v)
             
             return G_sparse
-        G_sparse = linegraph_sparsification_directed(original, dataset._data.x.numpy(), ratio=0.90, alpha=0.5, temperature=1.0)
-        new_edge_index = from_networkx(G_sparse).edge_index
-        print('Edge Index: ')
-        print('======================')
-        print(new_edge_index.shape)
-        print()
-        dataset._data.edge_index = new_edge_index
+        # Iteramos hasta 10 y vamos de 0.5 en 0.5
+        i = 0
+        max_homo = get_node_homophily(dataset._data.y, dataset._data.edge_index)
+        best_rat = 1
+        best_edge = None
+        while i < 1:
+            print('Iteration: ', i)
+            G_sparse = linegraph_sparsification_directed(original, dataset._data.x.numpy(), ratio=i, alpha=0.2, temperature=1.0)
+            #G_nigger = surgical_linegraph_edge_replacement(original, dataset._data.x.numpy())
+            new_edge_index = from_networkx(G_sparse).edge_index
+            print('Edge Index: ')
+            print('======================')
+            print(new_edge_index.shape)
+            print()
+            print('======================')
+            print("Old node homophily: ", get_node_homophily(dataset._data.y, dataset._data.edge_index))
+            print('======================')
+            new_homo = get_node_homophily(dataset._data.y, new_edge_index)
+            print("New node homophily: ", new_homo)
+            if max_homo < new_homo:
+                best_rat = i
+                best_edge = new_edge_index
 
+            i+=0.001
+        print("Ratio ganador",best_rat)
+        dataset._data.edge_index = best_edge
+        
     return dataset, evaluator
 
 
