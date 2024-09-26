@@ -257,7 +257,7 @@ def get_dataset(name: str, root_dir: str, homophily=None, undirected=False, self
                 best_rat = i
                 best_edge = new_edge_index
 
-            i+=0.001
+            i+=0.05
         print("Ratio ganador",best_rat)
         dataset._data.edge_index = best_edge
         
